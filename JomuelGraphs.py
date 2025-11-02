@@ -4,6 +4,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from math import pi
+import plotly.express as px
 
 # Connection details
 DB_CONFIG = {
@@ -67,7 +68,6 @@ def fetchQUERY01():
         percentages = [(rev / totalRevenue) * 100 for rev in Revenue]
 # Create labels with percentages for legend
         legendLabels = [f"{category} ({percent:.1f}%)" for category, percent in zip(Category, percentages)]
-        print(DataFrame)
         plt.figure(figsize=(12, 8))
         wedges, texts = plt.pie(x=Revenue, startangle=90,
                            colors=['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD',
@@ -113,7 +113,6 @@ def fetchQUERY02():
         columns = ['Country', 'Season', 'TransactionCount', 'TotalRevenue', 'AverageSpending', 'UniqueCustomers']
 # Create DataFrame
         DataFrame = pd.DataFrame(results, columns=columns)
-        print(DataFrame)
 # Create the bar chart
         plt.figure(figsize=(12, 8))
 # Grouped bar chart by country and season
@@ -174,7 +173,6 @@ def fetchQUERY03():
         columns = ['Country', 'AvgItemPrice', 'TotalTransactions', 'TotalRevenue', 'AvgTransValue', 'ItemsSold']
 # Create DataFrame
         DataFrame = pd.DataFrame(results, columns=columns)
-        print(DataFrame.to_string())
 # Create Bar chart
         size = plt.figure(figsize=(12, 8))
         categories = ['AvgItemPrice', 'TotalTransactions', 'TotalRevenue', 'AvgTransValue', 'ItemsSold']
@@ -182,7 +180,7 @@ def fetchQUERY03():
         normalize = DataFrame.copy()
         for column in categories:
             normalize[column] = normalize[column] / normalize[column].max()
-        ax = size.add_subplot(111, polar=True)
+        axis = size.add_subplot(111, polar=True)
         angles = [n / float(lengthCat) * 2 * pi for n in range(lengthCat)]
         angles += angles[:1]
 # Plot each country
@@ -190,11 +188,11 @@ def fetchQUERY03():
         for i, (idx, row) in enumerate(DataFrame.iterrows()):
             values = normalize[categories].iloc[i].tolist()
             values += values[:1]  # Complete the circle
-            ax.plot(angles, values, 'o-', linewidth=2, label=row['Country'], color=colors[i])
-            ax.fill(angles, values, alpha=0.1, color=colors[i])
+            axis.plot(angles, values, 'o-', linewidth=2, label=row['Country'], color=colors[i])
+            axis.fill(angles, values, alpha=0.1, color=colors[i])
 # Add labels
         plt.xticks(angles[:-1], categories)
-        ax.set_rlabel_position(30)
+        axis.set_rlabel_position(30)
         plt.yticks([0.2, 0.4, 0.6, 0.8], ["20%", "40%", "60%", "80%"], color="black", size=8)
         plt.ylim(0, 1)
         plt.title("What's the average price per transaction in neighboring European countries?\n(Normalized Metrics)", size=15, fontweight='bold')
@@ -205,3 +203,111 @@ def fetchQUERY03():
     finally:
         if connection:
             connection.close()
+SQL_Query04 = ("""
+WITH customerTransactions AS (
+    SELECT 
+        Country,
+        `Customer ID`,
+        COUNT(DISTINCT `Invoice`) as TransactionCount
+    FROM purchasingandreapeatingpattens
+    WHERE Country IN ('France', 'Germany', 'EIRE')
+        AND `Customer ID` IS NOT NULL
+    GROUP BY Country, `Customer ID`
+)
+SELECT 
+    Country,
+    COUNT(`Customer ID`) as TotalCustomers,
+    SUM(TransactionCount) as TotalTransactions,
+    ROUND(AVG(TransactionCount), 2) as AvgTransactionsPerCustomer,
+    SUM(CASE WHEN TransactionCount = 1 THEN 1 ELSE 0 END) as OneTimeCustomers,
+    SUM(CASE WHEN TransactionCount > 1 THEN 1 ELSE 0 END) as RepeatCustomers,
+    ROUND(SUM(CASE WHEN TransactionCount > 1 THEN 1 ELSE 0 END) * 100.0 / COUNT(`Customer ID`), 2) as RepeatCustomerRate
+FROM customerTransactions
+GROUP BY Country
+ORDER BY RepeatCustomerRate DESC
+               """)
+def fetchQUERY04():
+    connection: Connection = None
+    try:
+# Establish connection
+        connection = mariadb.connect(**DB_CONFIG)
+        cursor: Cursor = connection.cursor()
+        print("--- MariaDB Connector: QUERY04 ---")
+# Execute query
+        cursor.execute(SQL_Query04)
+# Fetch all records
+        results = cursor.fetchall()
+        columns = ['Country', 'TotalCustomers', 'TotalTransactions', 'AvgTransactionsPerCustomer',
+           'OneTimeCustomers', 'RepeatCustomers', 'RepeatCustomerRate']
+# Create DataFrame
+        DataFrame = pd.DataFrame(results, columns=columns)
+# Create the graph
+        figure, axis = plt.subplots(figsize=(12, 8))
+        # Create funnel data
+        totalCustomers = DataFrame['TotalCustomers'].astype(int)
+        repeatCustomers = DataFrame['RepeatCustomers'].astype(int)
+        highValue = [int(repeat * 0.3) for repeat in repeatCustomers]
+        yAxis = np.arange(len(DataFrame['Country']))
+        width = 0.25
+        axis.barh(yAxis - width, totalCustomers, width, label='Total Customers', color='blue')
+        axis.barh(yAxis, repeatCustomers, width, label='Repeat Customers', color='lightgreen')
+        axis.barh(yAxis + width, highValue, width, label='High-Value Customers', color='gold')
+        axis.set_yticks(yAxis)
+        axis.set_yticklabels(DataFrame['Country'])
+        axis.set_xlabel('Number of Customers')
+        axis.set_title('Between France, Germany, and Ireland, how does customer repeat \npurchase behavior differ?', fontweight='bold')
+        axis.legend()
+        plt.gca().invert_yaxis()
+        plt.tight_layout()
+        plt.show()
+    except Error as e:
+        print(f"Error: {e}")
+    finally:
+        if connection:
+            connection.close()
+SQL_Query05 = ("""
+SELECT Description, AVG(Price) as AvgPrice, AVG(Quantity) as AvgQuantity, SUM(Quantity) as TotalQuantity,
+SUM(Price * Quantity) as TotalRevenue, COUNT(*) as TransactionCount FROM priceandquantityfrance
+GROUP BY Description ORDER BY TotalRevenue DESC
+""")
+def fetchQUERY05():
+    connection: Connection = None
+    try:
+# Establish connection
+        connection = mariadb.connect(**DB_CONFIG)
+        cursor: Cursor = connection.cursor()
+        print("--- MariaDB Connector: QUERY05 ---")
+# Execute query
+        cursor.execute(SQL_Query05)
+# Fetch all records
+        results = cursor.fetchall()
+        columns = ['Description', 'AvgPrice', 'AvgQuantity', 'TotalQuantity', 'TotalRevenue', 'TransactionCount']
+# Create DataFrame
+        DataFrame = pd.DataFrame(results, columns=columns)
+# Create the graph
+        bins = [1, 5, 10, 20, 50, 100, float('inf')]
+        labels = ['1-5', '5-10', '10-20', '20-50', '50-100', '>100']
+        DataFrame['PriceRange'] = pd.cut(DataFrame['AvgPrice'], bins=bins, labels=labels)
+# Calculate stats by price range
+        price_stats = DataFrame.groupby('PriceRange', observed=False).agg({
+            'TotalRevenue': 'sum',
+            'TransactionCount': 'sum',
+            'Description': 'count'
+        }).rename(columns={'Description': 'ProductCount'})
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6))
+# Revenue by price range
+        ax1.bar(price_stats.index, price_stats['TotalRevenue'], color='skyblue')
+        ax1.set_title('Total Revenue by Price Range')
+        ax1.set_ylabel('Total Revenue')
+        ax1.tick_params(axis='x', rotation=45)
+# Product count by price range
+        ax2.bar(price_stats.index, price_stats['ProductCount'], color='lightcoral')
+        ax2.set_title('Number of Products by Price Range')
+        ax2.set_ylabel('Product Count')
+        ax2.tick_params(axis='x', rotation=45)
+# Add main title
+        plt.suptitle('Price and Quantity Analysis for France', fontsize=16, fontweight='bold')
+        plt.tight_layout()
+        plt.show()
+    except Error as e:
+        print(f"Error: {e}")

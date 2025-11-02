@@ -1,8 +1,10 @@
 import mariadb
 import JomuelGraphs as JSM
+import GabrielGraphs as GAB
+import DanielGraphs as DAN
+import matplotlib.pyplot as plt
 from mariadb import Error, Cursor, Connection
 from sqlalchemy import create_engine, text
-
 # Connection details
 DB_CONFIG = {
  'host': 'localhost',
@@ -56,18 +58,20 @@ def importDatabase():
         result = SQAlchemyConnection.execute(text(f"SELECT * FROM `{table}`"))
         rows = result.fetchall()
         if rows:
+# Ensure rows are in the correct format (list of tuples)
+            rowsAsTuples = [tuple(row) for row in rows]
 # Insert all the info into the new tables
             columnNames = [col[1] for col in columns]
             placeholders = ', '.join(['%s'] * len(columnNames))
             insertInfo = f"INSERT INTO `{table}` ({', '.join([f'`{name}`' for name in columnNames])}) VALUES ({placeholders})"
 # Insert in batches of 1000
             batch_size = 1000
-            total_batches = (len(rows) - 1) // batch_size + 1
-            for i in range(0, len(rows), batch_size):
-                batch = rows[i:i + batch_size]
+            total_batches = (len(rowsAsTuples) - 1) // batch_size + 1
+            for i in range(0, len(rowsAsTuples), batch_size):
+                batch = rowsAsTuples[i:i + batch_size]
                 cursor.executemany(insertInfo, batch)
                 print(f" Inserted batch {i // batch_size + 1}/{total_batches}!")
-            print(f"Total {len(rows)} rows inserted into {table}!")
+            print(f"Total {len(rowsAsTuples)} rows inserted into {table}!")
         else:
             print(f"??No data in {table}")
         connection.commit()
@@ -81,10 +85,8 @@ def importDatabase():
             cursor.execute(f"SELECT COUNT(*) FROM `{table}`")
             count = cursor.fetchone()[0]
             print(f"  {table}: {count} rows")
-    except mariadb.Error as error:
-        print(error)
-    except Exception as e:
-        print("Error:", e)
+    except Error as error:
+        print("Error:", error)
     finally:
 # Close connections in finally block
         if SQAlchemyConnection:
@@ -93,7 +95,57 @@ def importDatabase():
             engine.dispose()
         if connection:
             connection.close()
-if __name__ == '__main__':
+def showJomuelGrahps():
+    print("\n" + "=" * 60)
+    print("JOMUEL'S GRAPHS")
+    print("=" * 60)
+    graphs = [
+        JSM.fetchQUERY01,
+        JSM.fetchQUERY02,
+        JSM.fetchQUERY03,
+        JSM.fetchQUERY04,
+        JSM.fetchQUERY05
+    ]
+# Show graphs
+    input("Press Enter to start showing all Jomuel graphs...")
+    for graph_function in graphs:
+        graph_function()
+    plt.show()
+def showDanielGraphs():
+    print("\n" + "=" * 60)
+    print("DANIEL'S GRAPHS")
+    print("=" * 60)
+    graphs = [
+        DAN.plot_total_products_sold,
+        DAN.plot_best_selling_products,
+        DAN.plot_total_revenue_by_country,
+        DAN.plot_top_customers,
+        DAN.plot_avg_revenue
+    ]
+# Show graphs
+    input("Press Enter to start showing all Daniel graphs...")
+    for graph_function in graphs:
+        graph_function()
+    # This will show all figures that were created
+    plt.show()
+def showGabrielGraphs():
+    print("\n" + "=" * 60)
+    print("GABRIEL'S GRAPHS")
+    print("=" * 60)
+# Show graphs
+    input("Press Enter to start showing all Daniel graphs...")
+    GAB.plot_bar()
+def main():
+# Call the import function
     #importDatabase()
-    #JSM.fetchQUERY01()
-    JSM.fetchQUERY03()
+# Professional presentation flow
+    print("\n" + "=" * 70)
+    print("GROUP 07 - DATA VISUALIZATION PRESENTATION")
+    print("=" * 70)
+# Call First person to present
+    print("Now printing the graphs in order(Jomuel, Daniel, Gabriel):")
+    showJomuelGrahps()
+    showDanielGraphs()
+    showGabrielGraphs()
+if __name__ == '__main__':
+    main()
