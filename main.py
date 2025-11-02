@@ -137,7 +137,7 @@ def showGabrielGraphs():
     GAB.plot_bar()
 def main():
 # Call the import function
-    #importDatabase()
+    importDatabase()
 # Professional presentation flow
     print("\n" + "=" * 70)
     print("GROUP 07 - DATA VISUALIZATION PRESENTATION")
