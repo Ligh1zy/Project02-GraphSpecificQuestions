@@ -5,6 +5,9 @@ import DanielGraphs as DAN
 import matplotlib.pyplot as plt
 from mariadb import Error, Cursor, Connection
 from sqlalchemy import create_engine, text
+import os
+import seaborn as sns
+from datetime import datetime
 # Connection details
 DB_CONFIG = {
  'host': 'localhost',
@@ -13,6 +16,21 @@ DB_CONFIG = {
  'database': 'Group07',
  'port': 3306,
 }
+# Graph saving configuration
+GRAPHDIRECTORY = "graphs"
+os.makedirs(GRAPHDIRECTORY, exist_ok=True)
+# Function to save the graphs
+def save_graph(graphName, presenterName):
+    if plt.get_fignums():  # Check if there are any figures
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"{presenterName}_{graphName}_{timestamp}.png"
+        filepath = os.path.join(GRAPHDIRECTORY, filename)
+        plt.savefig(filepath, dpi=300, bbox_inches='tight', facecolor='white')
+        print(f"Graph saved: {filepath}")
+        return filepath
+    else:
+        print("No active figure to save")
+        return None
 def importDatabase():
     try:
 # Connect to mariaDB
@@ -22,6 +40,24 @@ def importDatabase():
         cursor.execute("CREATE DATABASE IF NOT EXISTS Group07")
         cursor.execute("USE Group07")
         print("Database 'Group07' created/selected")
+# Check for tables
+        cursor.execute("SHOW TABLES")
+        mariaDBTables = [table[0] for table in cursor.fetchall()]
+        if mariaDBTables:
+# Data already exists in MariaDB then just verify and use it
+            print("Data already exists in MariaDB - using existing data")
+            print(f"Tables found: {mariaDBTables}")
+# Show row counts for verification
+            print("\nExisting Data Summary:")
+            print("-" * 40)
+            for table in mariaDBTables:
+                cursor.execute(f"SELECT COUNT(*) FROM `{table}`")
+                count = cursor.fetchone()[0]
+                print(f"  {table}: {count:,} rows")
+            print("Using existing MariaDB data - no import needed")
+            return
+# If data is empty
+        print("Database is empty - importing data from SQLite with SQLAlchemy...")
 # Connect to SQAlchemy .db file
         engine = create_engine('sqlite:///Group07.db')
         SQAlchemyConnection = engine.connect()
@@ -89,10 +125,6 @@ def importDatabase():
         print("Error:", error)
     finally:
 # Close connections in finally block
-        if SQAlchemyConnection:
-            SQAlchemyConnection.close()
-        if engine:
-            engine.dispose()
         if connection:
             connection.close()
 def showJomuelGrahps():
@@ -100,40 +132,45 @@ def showJomuelGrahps():
     print("JOMUEL'S GRAPHS")
     print("=" * 60)
     graphs = [
-        JSM.fetchQUERY01,
-        JSM.fetchQUERY02,
-        JSM.fetchQUERY03,
-        JSM.fetchQUERY04,
-        JSM.fetchQUERY05
+        ("Revenue_by_Product_Category", JSM.fetchQUERY01),
+        ("Seasonal_Purchasing_Patterns", JSM.fetchQUERY02),
+        ("European_Countries_Analysis", JSM.fetchQUERY03),
+        ("Customer_Repeat_Behavior", JSM.fetchQUERY04),
+        ("Annual_Revenue_Analysis", JSM.fetchQUERY05)
     ]
 # Show graphs
     input("Press Enter to start showing all Jomuel graphs...")
-    for graph_function in graphs:
-        graph_function()
-    plt.show()
+    for (graphName, graph_function) in graphs:
+        fig = graph_function()
+        if fig:
+            save_graph(graphName, "Jomuel_Graph")  # Save the returned figure
+            plt.show()
+            plt.close(fig)
 def showDanielGraphs():
     print("\n" + "=" * 60)
     print("DANIEL'S GRAPHS")
     print("=" * 60)
     graphs = [
-        DAN.plot_total_products_sold,
-        DAN.plot_best_selling_products,
-        DAN.plot_total_revenue_by_country,
-        DAN.plot_top_customers,
-        DAN.plot_avg_revenue
+        ("Total_Products_Sold", DAN.plot_total_products_sold),
+        ("Best_Selling_Products", DAN.plot_best_selling_products),
+        ("Revenue_by_Country", DAN.plot_total_revenue_by_country),
+        ("Top_Customers", DAN.plot_top_customers),
+        ("Average_Revenue", DAN.plot_avg_revenue)
     ]
 # Show graphs
     input("Press Enter to start showing all Daniel graphs...")
-    for graph_function in graphs:
-        graph_function()
-    # This will show all figures that were created
-    plt.show()
+    for (graphName, graph_function) in graphs:
+        fig = graph_function()
+        if fig:
+            save_graph(graphName, "Daniel Graph")  # Save the returned figure
+            plt.show()
+            plt.close(fig)
 def showGabrielGraphs():
     print("\n" + "=" * 60)
     print("GABRIEL'S GRAPHS")
     print("=" * 60)
 # Show graphs
-    input("Press Enter to start showing all Daniel graphs...")
+    input("Press Enter to start showing all Gabriel graphs...")
     GAB.plot_bar()
 def main():
 # Call the import function
@@ -147,5 +184,7 @@ def main():
     showJomuelGrahps()
     showDanielGraphs()
     showGabrielGraphs()
+# Show summary
+    print(f"\n🎉 All graphs completed and saved in '{GRAPHDIRECTORY}' directory!")
 if __name__ == '__main__':
     main()

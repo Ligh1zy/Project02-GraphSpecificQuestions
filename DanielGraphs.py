@@ -13,8 +13,6 @@ engine = create_engine(
     pool_pre_ping=True
 )
 
-print("Daniel Vega Rivera")
-
 # 1️ Total Products Sold by Country
 def plot_total_products_sold():
     query = """
@@ -29,7 +27,7 @@ def plot_total_products_sold():
         print("No data found for this query.\n")
         return
 
-    plt.figure(figsize=(10, 6))
+    fig = plt.figure(figsize=(10, 6))
     colors = plt.cm.Paired(range(len(df)))
     bars = plt.barh(df["Country"], df["TotalSales"], color=colors)
     plt.title("Total Products Sold by Country", fontsize=14, fontweight="bold")
@@ -44,8 +42,7 @@ def plot_total_products_sold():
     total_sum = df["TotalSales"].sum()
     plt.legend([f"Total Sales: {total_sum}"], loc="lower right")
     plt.tight_layout()
-    plt.show()
-
+    return fig
 # 2️ Top 10 Best-Selling Products
 def plot_best_selling_products():
     query = """
@@ -60,7 +57,7 @@ def plot_best_selling_products():
         print("No data found for this query.\n")
         return
 
-    plt.figure(figsize=(9, 7))
+    fig = plt.figure(figsize=(9, 7))
     wedges, texts, autotexts = plt.pie(
         df["TotalQuantity"],
         autopct="%1.1f%%",
@@ -78,8 +75,7 @@ def plot_best_selling_products():
         fontsize=8
     )
     plt.tight_layout()
-    plt.show()
-
+    return fig
 # 3️ Top 10 Countries by Total Revenue
 def plot_total_revenue_by_country():
     query = """
@@ -94,7 +90,7 @@ def plot_total_revenue_by_country():
         print("No data found for this query.\n")
         return
 
-    plt.figure(figsize=(10, 6))
+    fig = plt.figure(figsize=(10, 6))
     plt.plot(df["Country"], df["Revenue"], marker="o", color="blue", label="Revenue ($)")
     plt.fill_between(df["Country"], df["Revenue"], color="skyblue", alpha=0.3)
     plt.title("Top 10 Countries by Total Revenue", fontsize=14, fontweight="bold")
@@ -106,8 +102,7 @@ def plot_total_revenue_by_country():
 
     plt.legend()
     plt.tight_layout()
-    plt.show()
-
+    return fig
 # 4️ Top 10 Customers by Total Spending
 def plot_top_customers():
     query = """
@@ -123,7 +118,7 @@ def plot_top_customers():
         print("No data found for this query.\n")
         return
 
-    plt.figure(figsize=(10, 6))
+    fig = plt.figure(figsize=(10, 6))
     plt.scatter(df["CustomerID"], df["TotalSpent"], color="limegreen", s=100, label="Customers")
     plt.title("Top 10 Customers by Total Spending", fontsize=14, fontweight="bold")
     plt.xlabel("Customer ID")
@@ -135,8 +130,7 @@ def plot_top_customers():
 
     plt.legend()
     plt.tight_layout()
-    plt.show()
-
+    return fig
 # 5️ Average Revenue per Country
 def plot_avg_revenue():
     query = """
@@ -150,7 +144,7 @@ def plot_avg_revenue():
         print("No data found for this query.\n")
         return
 
-    plt.figure(figsize=(10, 6))
+    fig = plt.figure(figsize=(10, 6))
     bars = plt.bar(df["Country"], df["AvgRevenue"], color="#4A90E2", alpha=0.8)
     plt.title("Average Revenue per Country", fontsize=14, fontweight="bold")
     plt.xlabel("Country")
@@ -163,4 +157,4 @@ def plot_avg_revenue():
                  ha="center", va="bottom", fontsize=9)
 
     plt.tight_layout()
-    plt.show()
+    return fig

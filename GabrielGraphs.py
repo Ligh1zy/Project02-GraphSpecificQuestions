@@ -79,14 +79,11 @@ queries = {
 def create_bar_plot(df, x_col, y_col, title, palette="viridis", save_path=None):
     sns.set(style="whitegrid")
     plt.figure(figsize=(12, 6))
-    # Use hue=y_col to fix FutureWarning
     sns.barplot(x=x_col, y=y_col, data=df, palette=palette, hue=y_col, dodge=False, legend=False)
     plt.title(title)
     plt.xlabel(x_col)
     plt.ylabel(y_col)
     plt.tight_layout()
-    if save_path:
-        plt.savefig(save_path, dpi=300)
     plt.show()
 # -------------------------
 # 4 Execute queries & plot

@@ -4,7 +4,6 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from math import pi
-import plotly.express as px
 
 # Connection details
 DB_CONFIG = {
@@ -68,7 +67,7 @@ def fetchQUERY01():
         percentages = [(rev / totalRevenue) * 100 for rev in Revenue]
 # Create labels with percentages for legend
         legendLabels = [f"{category} ({percent:.1f}%)" for category, percent in zip(Category, percentages)]
-        plt.figure(figsize=(12, 8))
+        fig = plt.figure(figsize=(12, 8))
         wedges, texts = plt.pie(x=Revenue, startangle=90,
                            colors=['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD',
                                    '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E9', '#F8C471', '#AED6F1', '#30FF48', '#192AFF'],
@@ -76,7 +75,7 @@ def fetchQUERY01():
         plt.legend(wedges, legendLabels, title="Categories", loc="center left", bbox_to_anchor=(1, 0, 0.5, 1))
         plt.title('Which product categories generate the most revenue \nfrom January 2010-2011 on United Kingdom?', size=15, fontweight='bold')
         plt.tight_layout()
-        plt.show()
+        return fig
     except Error as e:
         print(f"Error: {e}")
     finally:
@@ -114,7 +113,7 @@ def fetchQUERY02():
 # Create DataFrame
         DataFrame = pd.DataFrame(results, columns=columns)
 # Create the bar chart
-        plt.figure(figsize=(12, 8))
+        fig = plt.figure(figsize=(12, 8))
 # Grouped bar chart by country and season
         countries = DataFrame['Country'].unique()
         seasons = ['Winter', 'Spring', 'Summer', 'Autumn']
@@ -144,7 +143,7 @@ def fetchQUERY02():
         plt.legend(title='Season')
         plt.grid(axis='y', alpha=0.3)
         plt.tight_layout()
-        plt.show()
+        return fig
 # Exceptions if they happen
     except mariadb.Error as e:
         print(f"Error connecting to MariaDB: {e}")
@@ -197,7 +196,7 @@ def fetchQUERY03():
         plt.ylim(0, 1)
         plt.title("What's the average price per transaction in neighboring European countries?\n(Normalized Metrics)", size=15, fontweight='bold')
         plt.legend(loc='upper right', bbox_to_anchor=(1.3, 1.0))
-        plt.show()
+        return size
     except Error as e:
         print(f"Error: {e}")
     finally:
@@ -259,7 +258,7 @@ def fetchQUERY04():
         axis.legend()
         plt.gca().invert_yaxis()
         plt.tight_layout()
-        plt.show()
+        return figure
     except Error as e:
         print(f"Error: {e}")
     finally:
@@ -308,6 +307,6 @@ def fetchQUERY05():
 # Add main title
         plt.suptitle('Price and Quantity Analysis for France', fontsize=16, fontweight='bold')
         plt.tight_layout()
-        plt.show()
+        return fig
     except Error as e:
         print(f"Error: {e}")
