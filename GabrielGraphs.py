@@ -1,6 +1,7 @@
 from sqlalchemy import create_engine, text
 import pandas as pd
 import matplotlib.pyplot as plt
+from matplotlib.patches import Patch
 import seaborn as sns
 import os
 import mariadb
@@ -78,12 +79,69 @@ queries = {
 # -------------------------
 def create_bar_plot(df, x_col, y_col, title, palette="viridis", save_path=None):
     sns.set(style="whitegrid")
+    df[x_col] = pd.Categorical(df[x_col], categories=df[x_col], ordered=True)
     plt.figure(figsize=(12, 6))
-    sns.barplot(x=x_col, y=y_col, data=df, palette=palette, hue=y_col, dodge=False, legend=False)
+    bars = sns.barplot(x=x_col, y=y_col, data=df, palette=palette, hue=y_col, dodge=False, legend=False)
     plt.title(title)
     plt.xlabel(x_col)
     plt.ylabel(y_col)
+    plt.xticks([])
+# Add value labels on top of bars
+    for i, (value, row) in enumerate(zip(df[y_col], df.iterrows())):
+        plt.text(i, value + (value * 0.01), f'{value:,.0f}',
+                 ha='center', va='bottom', fontsize=9, fontweight='bold')
+
+# Create custom legend based on the chart type
+    if "Sold" in y_col or "TotalSold" in y_col:
+        total = df[y_col].sum()
+        legend_text = f"Total Units Sold: {total:,.0f}"
+        plt.legend([legend_text], loc='upper right', frameon=True, fancybox=True, shadow=True)
+
+    elif "Orders" in y_col:
+        total = df[y_col].sum()
+        legend_text = f"Total Orders: {total:,.0f}"
+        plt.legend([legend_text], loc='upper right', frameon=True, fancybox=True, shadow=True)
+
+    elif "Value" in y_col or "AvgOrderValue" in y_col:
+        avg_value = df[y_col].mean()
+        legend_text = f"Average: ${avg_value:,.2f}"
+        plt.legend([legend_text], loc='upper right', frameon=True, fancybox=True, shadow=True)
+
+    elif "Purchase" in y_col:
+        total_purchases = df[y_col].sum()
+        legend_text = f"Total Purchases: {total_purchases:,.0f}"
+        plt.legend([legend_text], loc='upper right', frameon=True, fancybox=True, shadow=True)
+
+    elif "Return" in y_col or "ReturnedUnits" in y_col:
+        total_returns = df[y_col].sum()
+        legend_text = f"Total Returns: {total_returns:,.0f}"
+        plt.legend([legend_text], loc='upper right', frameon=True, fancybox=True, shadow=True)
+# Create x-axis legend elements
+    x_legend = [f"{i + 1}. {label}" for i, label in enumerate(df[x_col])]
+    bar_colors = [bar.get_facecolor() for bar in bars.patches]
+    reversed_colors = list(reversed(bar_colors))
+    legend_elements = [Patch(facecolor=reversed_colors[i],
+                             label=f"{i + 1}. {label}")
+                       for i, label in enumerate(df[x_col])]
+# Save the first legend and add it back after creating the second
+    first_legend = plt.gca().get_legend()
+# Create the x-axis legend
+    plt.legend(handles=legend_elements, labels=x_legend,
+               title=f"{x_col} List",
+               loc='center left',
+               bbox_to_anchor=(1.05, 0.5),
+               frameon=True,
+               fancybox=True,
+               shadow=True,
+               fontsize=9)
+
+# Add the first legend back
+    if first_legend:
+        plt.gca().add_artist(first_legend)
     plt.tight_layout()
+    if save_path:
+        plt.savefig(save_path, dpi=300, bbox_inches='tight')
+        print(f"Saved: {save_path}")
     plt.show()
 # -------------------------
 # 4 Execute queries & plot

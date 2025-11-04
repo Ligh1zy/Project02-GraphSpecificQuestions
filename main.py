@@ -6,7 +6,6 @@ import matplotlib.pyplot as plt
 from mariadb import Error, Cursor, Connection
 from sqlalchemy import create_engine, text
 import os
-import seaborn as sns
 from datetime import datetime
 # Connection details
 DB_CONFIG = {
